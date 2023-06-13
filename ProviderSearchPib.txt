@@ -1,0 +1,113 @@
+
+/**
+ * Retrieves the provider names from another file.
+ * @returns An array of provider names.
+ */
+function getProviderNames() {
+  var providerNames = ProviderNames.getProviderNames();
+
+  return providerNames;
+}
+
+/**
+ * @customfunction
+ * @param {String} inputString - The input string to search for.
+ * @returns {Array} - Top 5 matching values along with probability.
+ */
+function PROVIDERSEARCHPIB(inputString) {
+  var options = getProviderNames();
+
+  if (!options || options.length === 0) {
+    return "No options available.";
+  }
+
+  var results = [];
+  var exactMatch = false;
+
+  for (var i = 0; i < options.length; i++) {
+    var option = String(options[i]); // Convert the option to a string
+    var similarity = jaroWinklerDistance(inputString, option);
+    var probability = similarity * 100;
+
+    if (probability === 100) {
+      exactMatch = true;
+      results.push({ option: option, probability: probability });
+    } else {
+      results.push({ option: option, probability: probability });
+    }
+  }
+
+  // Sort results by probability in descending order
+  results.sort(function(a, b) {
+    return b.probability - a.probability;
+  });
+
+  var outputResults = [];
+
+  if (exactMatch) {
+    // If there is an exact match, return the top 5 results for getting the highest match value for expected output
+    outputResults = results.slice(0, 5);
+  } else {
+    // If not a 100% match, return the top 5 results for getting the highest match value for expected output
+    outputResults = results.slice(0, 5);
+  }
+
+  outputResults = outputResults.map(function(result) {
+    return result.option + " (" + result.probability.toFixed(2) + "%)";
+  });
+
+  return outputResults.join("\n");
+}
+
+function jaroWinklerDistance(a, b) {
+  // This function compares two strings and returns a score indicating how closely the strings match
+  var matchingWindow = Math.floor(Math.max(a.length, b.length) / 2) - 1;
+  var matchesA = new Array(a.length).fill(false);
+  var matchesB = new Array(b.length).fill(false);
+  var matches = 0;
+  var transpositions = 0;
+
+  for (var i = 0; i < a.length; i++) {
+    var start = Math.max(0, i - matchingWindow);
+    var end = Math.min(i + matchingWindow + 1, b.length);
+
+    for (var j = start; j < end; j++) {
+      if (b[j] === a[i] && !matchesB[j]) {
+        matchesA[i] = true;
+        matchesB[j] = true;
+        matches++;
+        break;
+      }
+    }
+  }
+
+  if (matches === 0) {
+    return 0;
+  }
+
+  var k = 0;
+
+  for (var i = 0; i < a.length; i++) {
+    if (matchesA[i]) {
+      while (!matchesB[k]) k++;
+      if (a[i] !== b[k]) {
+        transpositions++;
+      }
+      k++;
+    }
+  }
+
+  var jaroSimilarity = (matches / a.length + matches / b.length + (matches - transpositions / 2) / matches) / 3;
+  var prefixLength = 0;
+  var maxPrefixLength = 4; //(Atvan)
+
+  while (prefixLength < maxPrefixLength && a[prefixLength] === b[prefixLength]) {
+    prefixLength++;
+  }
+
+  var jaroWinklerSimilarity = jaroSimilarity + prefixLength * 0.1 * (1 - jaroSimilarity);
+  return jaroWinklerSimilarity;
+}
+
+
+
